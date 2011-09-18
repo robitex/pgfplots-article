@@ -1,0 +1,107 @@
+%% http://tex.stackexchange.com/questions/25775/fill-area-of-curve-above-a-line-using-pgfplots
+\documentclass{standalone}
+
+\usepackage{pgfplots}
+\usepackage{pgfplotstable}
+\usepackage{filecontents}
+\usetikzlibrary{calc,patterns}
+\begin{filecontents}{data.dat}
+0 0.2
+1 0.217
+2 0.255
+3 0.288
+6 0.58
+7 0.91
+8 1.02
+10 1.05
+12 0.92
+13 0.78
+14 0.59
+15 0.56
+16 0.66
+16.6 1.06
+17 1.1
+18 1.05
+\end{filecontents}
+
+\pgfplotstableread{data.dat}\data
+
+\newcommand\findintersections[2]{
+    \def\prevcell{#1}
+    \pgfplotstableforeachcolumnelement{1}\of#2\as\cell{%
+        \pgfmathparse{!or(
+            and(
+                \prevcell>#1,\cell>#1
+            ),
+            and(
+                \prevcell<#1,\cell<#1
+            )
+        )}
+
+        \ifnum\pgfmathresult=1
+            \pgfplotstablegetelem{\pgfplotstablerow}{0}\of{\data} \let\xb=\pgfplotsretval
+            \pgfplotstablegetelem{\pgfplotstablerow}{1}\of{\data} \let\yb=\pgfplotsretval
+            \pgfmathtruncatemacro\previousrow{ifthenelse(\pgfplotstablerow>0,\pgfplotstablerow-1,0)}
+            \pgfplotstablegetelem{\previousrow}{0}\of{\data} \let\xa=\pgfplotsretval
+            \pgfplotstablegetelem{\previousrow}{1}\of{\data} \let\ya=\pgfplotsretval
+            \pgfmathsetmacro\newx{
+                \xa+(\ya-#1)/(ifthenelse(\yb==\ya,1,\ya-\yb) )*(\xb-\xa)    }
+
+            \edef\test{\noexpand\pgfplotstableread[col sep=comma,row sep=crcr,header=has colnames]{
+                0,1\noexpand\\
+                \newx,#1\noexpand\\
+            }\noexpand\newrow}
+            \test
+            \pgfplotstablevertcat\interpolated{\newrow}
+        \fi
+        \let\prevcell=\cell
+    }
+    \pgfplotstablevertcat\interpolated{#2}
+    \pgfplotstablesort[sort cmp={float <}]\interpolated{\interpolated}
+    \pgfplotstableset{
+        create on use/above line/.style={
+            create col/expr={max(\thisrow{1},#1)}
+        },
+        create on use/below line/.style={
+            create col/expr={min(\thisrow{1},#1)}
+        },
+    }
+}
+
+
+\begin{document}
+\pgfplotsset{compat=newest} % For nicer label placement
+
+\findintersections{0.9}{\data}
+
+\pgfplotsset{
+   every axis/.append style={
+      line width=1.1pt, % 1.8pt,% thick
+      tick style={line width=1.1pt} % 1.8pt semithick
+      },
+   major grid style={
+      line width = 0.7pt,
+      black,
+      dash pattern=on 8pt off 4pt
+   },
+}
+
+\begin{tikzpicture}
+\begin{axis}[
+    xlabel=Time of day,
+    ylabel=Volume,
+    ytick=\empty,
+    % extra y ticks={0.0,0.75},
+    % extra y tick labels={$e$},
+    axis x line=bottom,
+    axis y line=left,
+    enlargelimits=true
+    ]
+\addplot[fill,pattern=north west lines,no markers,line width=0pt] table [y=above line] {\interpolated} |- (current plot begin);
+\addplot[fill,pattern=crosshatch dots,no markers,line width=0pt] table [y=below line] {\interpolated} |- (current plot begin);
+\addplot[orange,no markers,line width=2pt,domain=-1:20] {0.9};
+\addplot[blue,line width=2pt,mark=*] table  {\data};
+\end{axis}
+\end{tikzpicture}
+
+\end{document}

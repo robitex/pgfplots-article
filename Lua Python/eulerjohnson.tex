@@ -1,0 +1,67 @@
+%
+% Copyright (C) 2011 Agostino De Marco
+%                    <agostino dot demarco at unina dot it>
+%                    Roberto Giacomelli
+%                    <giaconet dot mailbox at gmail dot com>
+%
+%    This work may be distributed and/or modified under the
+%    conditions of the LaTeX Project Public License, either
+%    version 1.3 of this license or any later version.
+%    The latest version of this license is in
+%    http://www.latex-project.org/lppl.txt and version 1.3
+%    or later is part of all distributions of LaTeX version
+%    2005/12/01 or later.
+%
+% This work has the LPPL maintenance status `maintained'.
+% 
+% The Current Maintainer of this work are Agostino De Marco
+% and Roberto Giacomelli
+%
+\documentclass{standalone}
+\usepackage{amsmath}
+\usepackage{pgfplots}
+
+\def\explainmathbox{%
+\rule{8pt}{0pt}\parbox{4.5cm}{
+\footnotesize\smallskip
+Formula di Johnson ($\lambda<\lambda_\mathrm{t}$)
+\[\sigma_\mathrm{cr}=
+  \sigma_\mathrm{s}\left(1-\frac{\lambda^2}
+{4\pi^2E}\sigma_\mathrm{s}\right) 
+\] 
+Formula di Eulero ($\lambda\geq\lambda_\mathrm{t}$)
+\[\sigma_\mathrm{cr}=
+  \dfrac{\pi^2 E}{\lambda^2} 
+\] 
+Snellezza di transizione:
+\[\lambda_\mathrm{t}=
+  \pi\sqrt{\dfrac{2E}{\sigma_\mathrm{s}}} 
+\]
+}
+}
+
+\begin{document}
+\begin{tikzpicture}
+\begin{axis}[tick label style={font=\footnotesize},
+             width=110mm, height=90mm,
+             xmin=0, xmax=100,
+             ymin=0, ymax=100,
+             grid=major
+             ]
+
+\foreach \ss in {20,30,...,90}
+   \addplot[line width=0.5pt] file {dati\ss.txt};
+
+\addplot[mark=*,
+         mark size=1.4pt,
+         only marks,
+         draw=blue,
+         fill=blue] file {points.txt};
+
+\draw[fill=white]
+     (axis cs:100,40) rectangle (axis cs:50,100)
+     node[anchor=north west]
+     {\explainmathbox};
+\end{axis}
+\end{tikzpicture}
+\end{document}
